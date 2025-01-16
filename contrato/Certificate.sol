@@ -89,9 +89,10 @@ contract Certificate is ERC721URIStorage, AccessControl {
         revokeRole(MINTER_ROLE, account);
     }
 
-    // Sobrescrevendo a função `_beforeTokenTransfer` para impedir a transferência de certificados
-
-
+ function _update(address to, uint256 tokenId, address auth) internal override returns (address){
+    require(!_transferable[tokenId], "Certificate is not transferable");
+    revert("You cannot transfer certificates.");
+ }
 
 
     function getCertificateData(uint256 certificateId) public view returns (CertificateData memory) {
