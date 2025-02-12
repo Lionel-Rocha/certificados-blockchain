@@ -13,15 +13,15 @@ async function grantRole(wallet, address){
 
     try{
         let result = await contract.grantMinterRole(address);
-        console.log(`Success!\nBlock number: ${result.blockNumber}\nTransaction hash: ${hash}`);
+        console.log(`Sucesso!\nBlock number: ${result.blockNumber}\nHash da transação: ${result.hash}`);
         return true;
     } catch (error) {
         if (error.message.includes("caller is not token owner or approved")){
-            console.error("Current address can't grand roles. Did you populate the .env file?");
+            console.error("O endereço atual não consegue fornecer papéis.");
             return false;
         } else {
-            console.error("Couldn't complete this transaction.");
-            return false;
+            console.error("Não foi possível completar a transação.");
+            throw error;
         }
     }
 
@@ -33,15 +33,15 @@ async function revokeRole(wallet, address){
 
     try{
         let result = await contract.revokeMinterRole(address);
-        console.log(`Success!\nBlock number: ${result.blockNumber}\nTransaction hash: ${hash}`);
+        console.log(`Sucesso!\nBlock number: ${result.blockNumber}\nHash da transação: ${result.hash}`);
         return true;
     } catch (error) {
         if (error.message.includes("caller is not token owner or approved")){
-            console.error("Current address can't revoke roles. Did you populate the .env file?");
+            console.error("O endereço atual não consegue revogar papéis.");
             return false;
         } else {
-            console.error("Couldn't complete this transaction.");
-            return false;
+            console.error("Não foi possível completar a transação.");
+            throw error;
         }
     }
 }
@@ -51,14 +51,16 @@ async function awardCertificate(wallet, address, tokenuri, institution, course, 
 
     try{
         let result = await contract.awardCertificate(address, tokenuri, institution, course, enrollmentNumber);
-        console.log(result);
+        let receipt = await result.wait();
+        console.log(`Sucesso!\nBlock number: ${result.blockNumber}\nHash da transação: ${result.hash}`);
+
     }catch (error) {
         if (error.message.includes("caller is not token owner or approved")){
-            console.error("Current address can't award certificates. Did you populate the .env file?");
+            console.error("O endereço atual não consegue fornecer certificados.");
             return false;
         } else {
-            console.error("Couldn't complete this transaction.");
-            return false;
+            console.error("Não foi possível completar a transação.");
+            throw error;
         }
     }
 }
