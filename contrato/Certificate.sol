@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
@@ -50,34 +50,35 @@ contract Certificate is ERC721URIStorage, AccessControl {
 
     // Função para premiar o estudante com um certificado, agora com informações detalhadas do estudante
     function awardCertificate(
-    address studentWallet,
-    string memory tokenURI,
-    string memory institution,
-    string memory course,
-    string memory enrollmentNumber
-) public onlyRole(MINTER_ROLE) returns (uint256) {
-    uint256 newCertificateId = _tokenIdCounter;
-        _mint(studentWallet, newCertificateId); // Emite o certificado (NFT)
-        _setTokenURI(newCertificateId, tokenURI); // Define a URI associada ao certificado
+        address studentWallet,
+        string memory tokenURI,
+        string memory institution,
+        string memory course,
+        string memory enrollmentNumber
+    ) public onlyRole(MINTER_ROLE) returns (uint256) {
+        require(studentWallet != address(0), "Invalid student address");
 
-        // Armazena as informações detalhadas no mapeamento de certificados
+        uint256 newCertificateId = _tokenIdCounter;
+        _mint(studentWallet, newCertificateId);
+        _setTokenURI(newCertificateId, tokenURI);
+
         _certificateData[newCertificateId] = CertificateData({
             tokenURI: tokenURI,
             institution: institution,
             course: course
         });
-        _transferable[newCertificateId] = false;
-        studentCertificates[studentWallet].push(newCertificateId); // Adiciona o certificado ao histórico do estudante
-        
-        // Indexa a combinação de instituição, curso e matrícula com o ID do certificado
+
+        _transferable[newCertificateId] = false; // O certificado não pode ser transferido por padrão
+
+        studentCertificates[studentWallet].push(newCertificateId);
         studentCertificateIndex[institution][course][enrollmentNumber] = newCertificateId;
 
-        _tokenIdCounter++; // Incrementa o contador
-        emit CertificateAwarded(studentWallet, newCertificateId); // Dispara o evento de premiação do certificado
+        _tokenIdCounter++;
+
+        emit CertificateAwarded(studentWallet, newCertificateId);
 
         return newCertificateId;
-}
-
+    }
 
     // Função para conceder o papel de MINTER a um novo endereço
     function grantMinterRole(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -89,13 +90,15 @@ contract Certificate is ERC721URIStorage, AccessControl {
         revokeRole(MINTER_ROLE, account);
     }
 
- function _update(address to, uint256 tokenId, address auth) internal override returns (address){
-    require(!_transferable[tokenId], "Certificate is not transferable");
-    revert("You cannot transfer certificates.");
- }
+    //Não permitir que certificados sejam transferidos
+    function _update(address to, uint256 tokenId, address auth) internal override returns (address){
+        require(hasRole(MINTER_ROLE, msg.sender), "You cannot transfer certificates.");
+        require(!_transferable[tokenId], "Certificate is not transferable");
+        revert("You cannot transfer certificates.");
+    }
 
 
-    function getCertificateData(uint256 certificateId) public view returns (CertificateData memory) {
+     function getCertificateData(uint256 certificateId) public view returns (CertificateData memory) {
         return _certificateData[certificateId];
     }
 
@@ -111,11 +114,13 @@ contract Certificate is ERC721URIStorage, AccessControl {
         string memory institution,
         string memory course,
         string memory enrollmentNumber
-) public view returns (address) {
-    uint256 certificateId = studentCertificateIndex[institution][course][enrollmentNumber];
-    require(certificateId != 0, "Certificate not found with the provided information");
-    return ownerOf(certificateId); 
-}
+    ) public view returns (address) {
+        uint256 certificateId = studentCertificateIndex[institution][course][enrollmentNumber];
+
+        require(certificateId != 0, "Certificate not found with the provided information");
+
+        return ownerOf(certificateId);
+    }
 
 
     
