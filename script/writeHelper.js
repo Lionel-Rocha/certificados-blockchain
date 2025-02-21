@@ -16,9 +16,14 @@ async function grantRole(wallet, address){
         console.log(`Sucesso!\nBlock number: ${result.blockNumber}\nHash da transação: ${result.hash}`);
         return true;
     } catch (error) {
+        if (error.message.includes("bad address checksum")){
+            console.error("O endereço do contrato está incorreto.");
+            throw error;
+        }
+
         if (error.message.includes("caller is not token owner or approved")){
             console.error("O endereço atual não consegue fornecer papéis.");
-            return false;
+            throw error;
         } else {
             console.error("Não foi possível completar a transação.");
             throw error;
